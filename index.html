@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>odapp-challenge</title>
+</head>
+<body>
+    <header>
+        <h1 >Gerencia de Paciente</h1>
+    </header>
+    <main>
+        <div class="formulario">  
+             <h2>Cadastro de paciente</h2>     
+                <label for="numero">Número de Telefone</label>
+                <br>
+                <input type="text" name="numero" id="numero">
+                <br>
+
+                <label for="nome">Nome Completo</label>
+                <br>
+                <input type="text" name="nome" id="nome">
+                <br>
+               
+               <label for="idade">Idade</label>
+               <br>
+               <input type="text" name="idade" id="idade">
+               <br>
+               
+               <label for="dataCadastro">Data de Cadastro</label>
+               <br>
+               <input type="date" name="dataCadastro" id="dataCadastro">
+               <br>
+               
+               <label for="cidade">Cidade</label>
+               <br>
+               <input type="text" name="cidade" id="cidade">
+               
+               <br>
+               <label for="estado">Estado</label>
+               <br>
+               <input type="text" name="estado" id="estado">
+               <br>
+               <button class="botaoCadastrar" id="btnCadastrar">Cadastrar</button>
+        </div>
+        <aside>
+            <nav>
+                <a class="botaoCadastro" href="">Cadastro do paciente</a>
+                <a class="botaoListagem" href="">Listagem de paciente</a>
+            </nav>
+        </aside>
+        
+
+
+<section class="listagem">
+    <h2>Lista de Pacientes</h2>
+    <ul id="listaPacientes"></ul>
+</section>
+
+    </main>
+    <footer>
+        <p>© 2025 Gerencia de Pacientes. Todos os direitos reservados.</p>
+
+    </footer>
+<script>
+
+
+let modoEdicao = false;
+let pacienteEditandoId = null;
+
+
+  // Define a URL base para as requisições à API de pacientes.
+
+  const apiUrl = 'http://localhost:3000/paciente';
+
+
+  // Gerencia a ação de clique no botão de cadastro/atualização.
+
+  // Coleta os dados do formulário e, dependendo do texto do botão (Cadastrar ou Atualizar), executa uma requisição POST (para criar) ou PATCH (para atualizar) para a apiUrl. Exibe alertas de sucesso ou erro e chama listarPacientes() para atualizar a lista.
+
+  document.getElementById('btnCadastrar').addEventListener('click', async () => {
+  const paciente = {
+    numero: document.getElementById('numero').value,
+    nome: document.getElementById('nome').value,
+    idade: parseInt(document.getElementById('idade').value),
+    dataCadastro: document.getElementById('dataCadastro').value,
+    cidade: document.getElementById('cidade').value,
+    estado: document.getElementById('estado').value,
+  };
+
+  try {
+    let response;
+
+    if (modoEdicao && pacienteEditandoId) {
+      // PATCH
+      response = await fetch(`${apiUrl}/${pacienteEditandoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paciente)
+      });
+    } else {
+      // POST
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paciente)
+      });
+    }
+
+    if (response.ok) {
+      alert(modoEdicao ? 'Paciente atualizado!' : 'Paciente cadastrado!');
+      limparFormulario();
+      listarPacientes();
+    } else {
+      alert('Erro ao enviar os dados.');
+    }
+  } catch (err) {
+    alert('Erro de rede: ' + err.message);
+  }
+});
+
+
+//Busca todos os pacientes da API e os exibe na interface.
+
+// Faz uma requisição GET para a apiUrl, parseia a resposta JSON e cria elementos <li> para cada paciente, incluindo botões de "Editar" e "Excluir" que chamam carregarPaciente() e deletarPaciente() respectivamente.
+
+
+  async function listarPacientes() {
+    try {
+      const response = await fetch(apiUrl);
+      const pacientes = await response.json();
+      const lista = document.getElementById('listaPacientes');
+      lista.innerHTML = '';
+
+      pacientes.forEach(p => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+  <strong>${p.nome}</strong> - ${p.idade} anos - ${p.cidade}/${p.estado}
+  <br>📞 ${p.numero ?? 'Não informado'}
+  <br>
+  <button onclick="carregarPaciente('${p._id}')">Editar</button>
+  <button onclick="deletarPaciente('${p._id}')">Excluir</button>
+`;
+
+        lista.appendChild(li);
+      });
+    } catch (err) {
+      console.error('Erro ao listar:', err);
+    }
+  }
+
+// Carrega os dados de um paciente específico no formulário para edição
+
+// Faz uma requisição GET para apiUrl/:_id, preenche os campos do formulário com os dados do paciente e altera o texto e o onclick do botão btnCadastrar para "Atualizar" e atualizarPaciente(_id).
+
+
+  async function carregarPaciente(_id) {
+    try {
+      const response = await fetch(`${apiUrl}/${_id}`);
+      const p = await response.json();
+
+      // Preenche os campos do formulário
+      document.getElementById('numero').value = p.numero;
+      document.getElementById('nome').value = p.nome;
+      document.getElementById('idade').value = p.idade;
+      document.getElementById('dataCadastro').value = p.dataCadastro.substring(0, 10);
+      document.getElementById('cidade').value = p.cidade;
+      document.getElementById('estado').value = p.estado;
+
+      // Substitui o botão de cadastro por botão de atualização
+      const btn = document.getElementById('btnCadastrar');
+      btn.textContent = 'Atualizar';
+      modoEdicao = true;
+      pacienteEditandoId = _id; 
+      // Guarda o ID do paciente que está sendo editado
+      // Atualiza o onclick do botão para chamar a função de atualização
+
+      btn.onclick = () => atualizarPaciente(_id);
+    } catch (err) {
+      alert('Erro ao carregar paciente.');
+    }
+  }
+
+
+// Envia os dados atualizados de um paciente para a API.
+
+// Coleta os dados do formulário e envia uma requisição PATCH para apiUrl/:_id. Após o sucesso, limpa o formulário e recarrega a lista.
+
+
+  async function atualizarPaciente(_id) {
+    console.log('Atualizando paciente com ID:', _id);
+    const paciente = {
+      numero: document.getElementById('numero').value,
+      nome: document.getElementById('nome').value,
+      idade: parseInt(document.getElementById('idade').value),
+      dataCadastro: document.getElementById('dataCadastro').value,
+      cidade: document.getElementById('cidade').value,
+      estado: document.getElementById('estado').value,
+    };
+
+    try {
+      const response = await fetch(`${apiUrl}/${_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paciente)
+      });
+
+      if (response.ok) {
+        alert('Paciente atualizado!');
+        limparFormulario();
+        listarPacientes();
+      } else {
+        alert('Erro ao atualizar!');
+      }
+    } catch (err) {
+      alert('Erro de rede: ' + err.message);
+    }
+  }
+
+
+// Remove um paciente do banco de dados
+
+// Solicita confirmação ao usuário e, se confirmada, envia uma requisição DELETE para apiUrl/:_id. Após o sucesso, recarrega a lista.
+
+
+  async function deletarPaciente(_id) {
+    if (!confirm('Deseja realmente excluir este paciente?')) return;
+
+    try {
+      const response = await fetch(`${apiUrl}/${_id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Paciente excluído!');
+        listarPacientes();
+      } else {
+        alert('Erro ao excluir!');
+      }
+    } catch (err) {
+      alert('Erro de rede: ' + err.message);
+    }
+  }
+
+// Limpa todos os campos do formulário e restaura o botão btnCadastrar para seu estado original de "Cadastrar".
+
+
+  function limparFormulario() {
+
+    document.getElementById('numero').value = '';
+    document.getElementById('nome').value = '';
+    document.getElementById('idade').value = '';
+    document.getElementById('dataCadastro').value = '';
+    document.getElementById('cidade').value = '';
+    document.getElementById('estado').value = '';
+
+    const btn = document.getElementById('btnCadastrar');
+    btn.textContent = 'Cadastrar';
+  modoEdicao = false;
+  pacienteEditandoId = null;
+  }
+
+  // Guardar função original para restaurar
+  const cadastrarOriginal = document.getElementById('btnCadastrar').onclick;
+
+
+  // Listar pacientes ao carregar a página
+  window.onload = listarPacientes;
+</script>
+
+</body>
+</html>
