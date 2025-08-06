@@ -60,24 +60,21 @@
 
     </main>
     <footer>
+
         <p>© 2025 Gerencia de Pacientes. Todos os direitos reservados.</p>
 
     </footer>
 <script>
 
 
-let modoEdicao = false;
-let pacienteEditandoId = null;
+let modoEdicao = false; // Flag booleana que indica se o formulário está no modo de edição ('true') ou cadastro ('false').
+  
+let pacienteEditandoId = null; // Armazena o _id do paciente que está sendo editado. É 'null' quando o formulário está no modo de cadastro.
+  
 
 
-  // Define a URL base para as requisições à API de pacientes.
+  const apiUrl = 'http://localhost:3000/paciente'; // Define a URL base da API RESTful para as operaçãoes com pacientes. 
 
-  const apiUrl = 'http://localhost:3000/paciente';
-
-
-  // Gerencia a ação de clique no botão de cadastro/atualização.
-
-  // Coleta os dados do formulário e, dependendo do texto do botão (Cadastrar ou Atualizar), executa uma requisição POST (para criar) ou PATCH (para atualizar) para a apiUrl. Exibe alertas de sucesso ou erro e chama listarPacientes() para atualizar a lista.
 
   document.getElementById('btnCadastrar').addEventListener('click', async () => {
   const paciente = {
@@ -87,7 +84,23 @@ let pacienteEditandoId = null;
     dataCadastro: document.getElementById('dataCadastro').value,
     cidade: document.getElementById('cidade').value,
     estado: document.getElementById('estado').value,
-  };
+  }; // Lida com o evento de clique no botão "Cadastrar"(ou "Atualizar").
+
+    // Comportamento:
+
+    // 1: Coleta os valores dos campos do formulário.
+
+    // 2: Verifica 'modoEdicao' e 'pacienteEditandoId':
+
+    // Se 'true' e 'pacienteEditando' não for nulo, envia uma requisição 'PATCH' para 'apiUrl/:id' para atualizar o paciente.
+    // Caso contrário, envia uma requisição 'POST' para 'apiUrl' para cadastrar um novo paciente.
+
+    // 3: Exibe alertas de sucesso ou erro ('alert()')
+
+    // 4: Chama 'limparFormulario()' para resetar o formulário.
+
+    // 5: Chama 'listarPacientes()' atualizar a lista exibida. 
+    
 
   try {
     let response;
@@ -120,13 +133,28 @@ let pacienteEditandoId = null;
   }
 });
 
+  async function listarPacientes() { // Busca todos os pacientes da API e os exibe na seção de listagem.
 
-//Busca todos os pacientes da API e os exibe na interface.
+  // Comportamento: 
 
-// Faz uma requisição GET para a apiUrl, parseia a resposta JSON e cria elementos <li> para cada paciente, incluindo botões de "Editar" e "Excluir" que chamam carregarPaciente() e deletarPaciente() respectivamente.
+  // 1: Faz uma requisição 'GET' para 'apiUrl'
 
+  // 2: Processa a resposta JSON
 
-  async function listarPacientes() {
+  // 3: Limpa o conteúdo atual da <ul> com 'id="listaPacientes"'.
+
+  // 4: Para cada paciente retornado:
+  
+  // Cria um elemento <li>
+
+  // Popula o <li> com os dados do paciente(nome, idade, cidade, estado, numero, data de nascimento).
+
+  // Adiciona botões "Editar" e "Excluir" com 'onclick' chamando 'carregarPaciente()' e 'deletarPaciente()' respectivamente, passando o '_id' do paciente.
+
+  // adiciona o <li> à lista.
+
+  // 5: Trata erros de listagem.
+
     try {
       const response = await fetch(apiUrl);
       const pacientes = await response.json();
@@ -150,12 +178,25 @@ let pacienteEditandoId = null;
     }
   }
 
-// Carrega os dados de um paciente específico no formulário para edição
 
-// Faz uma requisição GET para apiUrl/:_id, preenche os campos do formulário com os dados do paciente e altera o texto e o onclick do botão btnCadastrar para "Atualizar" e atualizarPaciente(_id).
+
 
 
   async function carregarPaciente(_id) {
+    // Carrega os dados de um paciente específico no formulário para edição
+
+      //Comportamento:
+
+      // 1: Faz uma requisição 'GET' para 'apiUrl/:_id'
+
+      // 2: Preenche os campos do formulário('numero', 'nome', 'idade', 'dataCadastro', 'cidade', 'estado') com os dados do paciente retornado.
+
+      // 3: Altera o texto do botão 'btnCadastrar' para "Atualizar"
+
+      // 4: Define 'modoEdicao = true' e 'pacienteEditando = _ id'.
+
+      // 5: Importante: Reatribui o 'onclick' do botão 'btnCadastrar' para chamar 'atualizarPaciente(_id)'.
+
     try {
       const response = await fetch(`${apiUrl}/${_id}`);
       const p = await response.json();
@@ -190,7 +231,18 @@ let pacienteEditandoId = null;
 
   async function atualizarPaciente(_id) {
     console.log('Atualizando paciente com ID:', _id);
-    const paciente = {
+    const paciente = { // Envia os dados atualizados de um paciente para a API.
+
+      // Compartamento:
+      
+      // 1: Coleta os dados atuais do formulário. 
+
+      // 2: Envia um requisição 'PATCH' para 'apiUrl/:_id' com os dados atualizados.
+
+      // 3: Exibe alertas de sucesso ou erro.
+
+      // 4: Chama 'limparFormulario()' e 'listarPacientes()' após a atualização bem-sucedida.
+
       numero: document.getElementById('numero').value,
       nome: document.getElementById('nome').value,
       idade: parseInt(document.getElementById('idade').value),
@@ -225,7 +277,17 @@ let pacienteEditandoId = null;
 
 
   async function deletarPaciente(_id) {
-    if (!confirm('Deseja realmente excluir este paciente?')) return;
+    if (!confirm('Deseja realmente excluir este paciente?')) return; // Remove um paciente do banco de dados.
+
+    // Comportamento:
+
+    // 1: Exibe uma caixa de diálogo de confirmação ('confirm()'). Se o usuário cancelar, a função é encerrada.
+
+    // 2: Se confirmado, envia uma requisição 'DELETE' para 'apiUrl/:_id'.
+
+    // 3: Exibe alertas de sucesso ou erro.
+
+    // 4: Chama 'listarPacientes()' após a exclusão bem-sucedida.
 
     try {
       const response = await fetch(`${apiUrl}/${_id}`, {
@@ -246,7 +308,15 @@ let pacienteEditandoId = null;
 // Limpa todos os campos do formulário e restaura o botão btnCadastrar para seu estado original de "Cadastrar".
 
 
-  function limparFormulario() {
+  function limparFormulario() { // Limpa todos os campos do formulário e restaura o botão 'btnCadastrar' para seu estado original de "Cadastrar".
+
+  // Comportamento: 
+
+  // 1: Define o 'value' de todos os campos de entrada como uma string vazia.
+
+  // 2: Define o 'textContent' do botão 'btnCadastrar'  de volta para "Cadastrar".
+
+  // 3: Reseta 'modoEdicao = false' e 'pacienteEditandoId = null'.
 
     document.getElementById('numero').value = '';
     document.getElementById('nome').value = '';
@@ -262,11 +332,14 @@ let pacienteEditandoId = null;
   }
 
   // Guardar função original para restaurar
+
   const cadastrarOriginal = document.getElementById('btnCadastrar').onclick;
 
 
   // Listar pacientes ao carregar a página
-  window.onload = listarPacientes;
+
+  window.onload = listarPacientes; // Garante que a função 'listaPacientes()' seja executada automaticamente assim que a pagina é completamente carregada no navegador, populando a lista inicial de pacientes.
+  
 </script>
 
 </body>

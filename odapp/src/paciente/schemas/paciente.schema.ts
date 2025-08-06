@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'; 
 import { Document } from 'mongoose';
 
+// Este arquivo define o schema Mongoose para a entidade Paciente, que mapeia a estrutura dos documentos na coleção pacientes do MongoDB.
+
 export type PacienteDocument = Paciente & Document;
 
 @Schema()
